@@ -1,0 +1,54 @@
+# Maven / Gradle build output
+target/
+build/
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Git metadata
+.git/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node artifacts (if present)
+node_modules/
+
+# Coverage / reports
+coverage/
+reports/
+
+# Temporary files
+tmp/
+temp/
+
+# Observability generated data
+observability/**/data/
+observability/**/logs/
+
+# Archives
+*.zip
+*.tar
+*.gz
+
+# Binary artifacts
+*.class
+*.jar
+*.war
+
+# VSCode
+.vscode/
+
+# Maven wrapper binaries cache
+.mvn/wrapper/maven-wrapper.jar
+
+mvnw
+mvnw.cmd
+
+.env
