@@ -47,3 +47,26 @@ docker compose up -d
 
 * **Qdrant API**: http://localhost:6333  
   * Accessing this endpoint should return the system status in JSON format.
+
+
+---
+
+## Testing Photo Upload (Postman)
+
+You can test the photo upload endpoint using the following cURL request (can be imported into Postman):
+
+```bash
+curl --location 'http://localhost:8080/api/photos/upload' \
+--form 'file=@"/path/to/your/photo.jpg"'
+```
+
+### Postman Configuration
+
+After importing the request into Postman:
+
+1. Open the **Body** tab.
+2. Select **form-data**.
+3. In the `file` row, manually choose an image file from your computer.
+4. Send the request.
+
+The endpoint expects a multipart file under the `file` field.
