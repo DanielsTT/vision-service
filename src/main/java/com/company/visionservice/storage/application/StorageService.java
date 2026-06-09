@@ -1,5 +1,7 @@
 package com.company.visionservice.storage.application;
 
+import com.company.visionservice.rabbit.PhotoAnalysisMessage;
+import com.company.visionservice.rabbit.PhotoAnalysisProducer;
 import com.company.visionservice.storage.domain.Photo;
 import com.company.visionservice.storage.domain.PhotoStatus;
 import com.company.visionservice.storage.infrastructure.PhotoRepository;
@@ -20,6 +22,7 @@ public class StorageService {
 
     private final MinioClient minioClient;
     private final PhotoRepository photoRepository;
+    private final PhotoAnalysisProducer photoAnalysisProducer;
 
     @Value("${app.minio.bucket-name}")
     private String bucketName;
@@ -48,7 +51,14 @@ public class StorageService {
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            return photoRepository.save(photo);
+            Photo savedPhoto = photoRepository.save(photo);
+
+            photoAnalysisProducer.sendToAnalysis(new PhotoAnalysisMessage(
+                    savedPhoto.getId(),
+                    savedPhoto.getMinioObjectKey()
+            ));
+
+            return savedPhoto;
 
         } catch (Exception e) {
             throw new RuntimeException("Error while saving file in MinIO object cloud", e);
