@@ -35,18 +35,30 @@ In the root directory of the project, where the `docker-compose.yml` file is loc
 ```bash
 docker compose up -d
 
+### 2. Monitor Ollama Model Initialization
+
+During the first startup, Ollama needs to download and initialize the AI model, which may take a few minutes. It is recommended to monitor the logs to confirm the model has been downloaded and started correctly:
+
+```bash
+docker logs -f visionservice-ollama
+```
+
+Wait until the logs confirm the model is ready before sending any requests to the application.
+
+---
+
 ### Service Endpoints
 
-* **RabbitMQ Management UI**: http://localhost:15672  
-  * Login: `admin`
-  * Password: `password`
+* **RabbitMQ Management UI**: http://localhost:15672
+    * Login: `admin`
+    * Password: `password`
 
-* **MinIO Console**: http://localhost:9001  
-  * Login: `admin`
-  * Password: `password`
+* **MinIO Console**: http://localhost:9001
+    * Login: `admin`
+    * Password: `password`
 
-* **Qdrant API**: http://localhost:6333  
-  * Accessing this endpoint should return the system status in JSON format.
+* **Qdrant API**: http://localhost:6333
+    * Accessing this endpoint should return the system status in JSON format.
 
 
 ---
@@ -70,3 +82,15 @@ After importing the request into Postman:
 4. Send the request.
 
 The endpoint expects a multipart file under the `file` field.
+
+---
+
+## Testing Photo Search (Postman)
+
+You can search the photo database using a natural language query via the following endpoint:
+
+```
+http://localhost:8080/api/photos/search?query=human face or person
+```
+
+In the `query` parameter, enter any description of what you want to find in the photo database — for example, a scene, object, or person. The application will perform a semantic similarity search and return matching results.

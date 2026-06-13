@@ -54,14 +54,14 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava-phi3 && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:13b && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:34b && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run minicpm-v && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run moondream && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run bakllava && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run qwen2-vl && tail -f /dev/null" ]
+    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava-phi3 && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:13b && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:34b && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run minicpm-v && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run moondream && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run bakllava && ollama pull nomic-embed-text && tail -f /dev/null" ]
+#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run qwen2-vl && ollama pull nomic-embed-text && tail -f /dev/null" ]
     deploy:
       resources:
         reservations:
