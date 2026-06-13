@@ -5,6 +5,7 @@ import com.company.visionservice.storage.application.StorageService;
 import com.company.visionservice.storage.domain.Photo;
 import com.company.visionservice.storage.domain.PhotoStatus;
 import com.company.visionservice.storage.infrastructure.PhotoRepository;
+import com.company.visionservice.vectordb.application.VectorDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -26,6 +27,7 @@ public class PhotoAnalysisConsumer {
     private final StorageService storageService;
     private final PhotoRepository photoRepository;
     private final ChatModel chatModel;
+    private final VectorDbService vectorDbService;
 
     @RabbitListener(queues = RabbitConfig.PHOTO_ANALYSIS_QUEUE)
     public void handlePhotoAnalysis(PhotoAnalysisMessage message) {
@@ -44,7 +46,6 @@ public class PhotoAnalysisConsumer {
 
             log.info("Sending image to local model for processing...");
 
-
             var media = Media.builder()
                     .mimeType(MimeTypeUtils.parseMimeType(photo.getContentType()))
                     .data(new ByteArrayResource(imageBytes))
@@ -54,7 +55,6 @@ public class PhotoAnalysisConsumer {
                     .text("Identify the objects in this image. Provide a concise description in English.")
                     .media(media)
                     .build();
-
 
             var response = chatModel.call(new Prompt(userMessage));
             String aiResult = response.getResult().getOutput().getText();
@@ -66,6 +66,9 @@ public class PhotoAnalysisConsumer {
             photoRepository.save(photo);
 
             log.info("Database updated for photo ID: {} with status COMPLETED", photo.getId());
+
+            vectorDbService.savePhotoDescription(photo.getId(), aiResult);
+            log.info("Description successfully vectorized and indexed in Qdrant for photo ID: {}", photo.getId());
 
         } catch (Exception e) {
             log.error("Critical error during AI analysis for photo ID: {}", photo.getId(), e);
