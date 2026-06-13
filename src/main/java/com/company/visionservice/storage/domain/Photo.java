@@ -22,5 +22,6 @@ public class Photo {
     private long size;
     private String minioObjectKey;
     private PhotoStatus status;
+    private String aiDescription;
     private LocalDateTime createdAt;
 }

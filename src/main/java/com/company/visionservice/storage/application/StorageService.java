@@ -7,6 +7,7 @@ import com.company.visionservice.storage.domain.PhotoStatus;
 import com.company.visionservice.storage.infrastructure.PhotoRepository;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.GetObjectArgs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,18 @@ public class StorageService {
 
         } catch (Exception e) {
             throw new RuntimeException("Error while saving file in MinIO object cloud", e);
+        }
+    }
+
+    public byte[] getPhotoBytes(String objectKey) {
+        try (InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectKey)
+                        .build())) {
+            return stream.readAllBytes();
+        } catch (Exception e) {
+            throw new RuntimeException("Error while reading file from MinIO storage", e);
         }
     }
 }
