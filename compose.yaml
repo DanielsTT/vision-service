@@ -70,9 +70,39 @@ services:
               count: all
               capabilities: [gpu]
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: visionservice-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: visionservice-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: visionservice-jaeger
+    ports:
+      - "16686:16686" # UI Jaegera
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+
 volumes:
   mongo_data:
   rabbitmq_data:
   qdrant_data:
   minio_data:
   ollama_data:
+  prometheus_data:
+  grafana_data:
