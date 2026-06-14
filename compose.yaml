@@ -14,6 +14,9 @@ services:
       - mongo_data:/data/db
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=mongodb"
 
   rabbitmq:
     image: rabbitmq:4.0-management
@@ -28,6 +31,9 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=rabbitmq"
 
   qdrant:
     image: qdrant/qdrant:v1.13.0
@@ -39,6 +45,9 @@ services:
       - qdrant_data:/qdrant/storage
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=qdrant"
 
   minio:
     image: minio/minio:latest
@@ -54,6 +63,9 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=minio"
 
   ollama:
     image: ollama/ollama:latest
@@ -72,6 +84,9 @@ services:
               capabilities: [gpu]
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=ollama"
 
   prometheus:
     image: prom/prometheus:latest
@@ -79,14 +94,18 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-remote-write-receiver'
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=prometheus"
 
   grafana:
     image: grafana/grafana:latest
@@ -96,21 +115,64 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
     networks:
       - vision-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=grafana"
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: visionservice-jaeger
+  loki:
+    image: grafana/loki:3.3.0
+    container_name: visionservice-loki
     ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+      - "3100:3100"
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=loki"
+
+  promtail:
+    image: grafana/promtail:3.3.0
+    container_name: visionservice-promtail
+    volumes:
+      - ./observability/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - vision-network
+    depends_on:
+      - loki
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: visionservice-tempo
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo.yaml
+    networks:
+      - vision-network
+    labels:
+      - "logging=promtail"
+      - "logging_jobname=tempo"
 
 volumes:
   mongo_data:
@@ -120,6 +182,8 @@ volumes:
   ollama_data:
   prometheus_data:
   grafana_data:
+  loki_data:
+  tempo_data:
 
 networks:
   vision-network:
