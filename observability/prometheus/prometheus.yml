@@ -6,7 +6,9 @@ scrape_configs:
   - job_name: 'vision-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      # host.docker.internal: app running locally from the IDE
+      # vision-service: app running as a container in this compose (profile=docker)
+      - targets: ['host.docker.internal:8080', 'vision-service:8080']
 
   - job_name: 'tempo'
     static_configs:

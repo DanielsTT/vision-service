@@ -30,10 +30,15 @@ Before running the application, ensure you have the following installed:
 ## Step-by-Step Setup
 
 ### 1. Start the Infrastructure (Docker)
-In the root directory of the project, where the `docker-compose.yml` file is located, run the following command:
+In the root directory of the project, where the `compose.yaml` file is located, run the following command:
 
 ```bash
 docker compose up -d
+```
+
+This starts MongoDB, RabbitMQ, Qdrant, MinIO, Ollama, and the full observability stack (Prometheus, Grafana, Loki, Promtail, Tempo).
+
+By default this **also builds and starts the VisionService app itself** as the `vision-service` container (profile `docker`, see below). If you'd rather run the app from your IDE instead, see "Running the app from the IDE" below.
 
 ### 2. Monitor Ollama Model Initialization
 
@@ -71,6 +76,46 @@ Wait until the logs confirm the model is ready before sending any requests to th
 * **Tempo**: http://localhost:3200 (OTLP gRPC: 4317, OTLP HTTP: 4318)
   * Distributed tracing backend. The application exports traces via OTLP/HTTP directly to Tempo. Traces are explored from within **Grafana** (Explore → Tempo), including trace-to-logs and service graph correlation.
 
+* **VisionService API**: http://localhost:8080
+  * Exposed whether the app runs as a container (`vision-service` in `compose.yaml`) or locally from the IDE.
+
+---
+
+## Running the App: IDE vs Docker
+
+The app can run in two ways. Both connect to the same infrastructure containers.
+
+### Option A — From the IDE (default `application.properties`)
+
+Run `VisionServiceApplication` directly from IntelliJ (or `mvn spring-boot:run`). The default `application.properties` points at `localhost` for every dependency (MongoDB, RabbitMQ, Qdrant, MinIO, Ollama, Loki, Tempo), which works because all infrastructure containers publish their ports to the host.
+
+If you run this way, you may want to stop/scale down the `vision-service` container to avoid two instances competing for the same RabbitMQ queue:
+
+```bash
+docker compose stop vision-service
+```
+
+### Option B — As a container (`application-docker.properties`)
+
+`docker compose up -d` builds and starts `vision-service` automatically, with `SPRING_PROFILES_ACTIVE=docker`. This activates `application-docker.properties`, which overrides the relevant URLs to use Docker service names (`mongodb`, `rabbitmq`, `qdrant`, `minio`, `ollama`, `loki`, `tempo`) instead of `localhost`.
+
+To rebuild after code changes:
+
+```bash
+docker compose build vision-service
+docker compose up -d vision-service
+```
+
+To view its logs:
+
+```bash
+docker logs -f visionservice-app
+```
+
+### Note on Prometheus scraping
+
+`observability/prometheus/prometheus.yml` scrapes **both** `host.docker.internal:8080` (Option A) and `vision-service:8080` (Option B). Whichever one isn't running will show as `down` (target health = red) in Prometheus — this is expected and can be ignored.
+
 ---
 
 ## Observability – Grafana Dashboard Setup
@@ -97,6 +142,12 @@ When prompted, assign the **Prometheus** data source for metric panels and the *
 ## Logs & Traces (Loki + Tempo)
 
 Application logs include `traceId`/`spanId` in every line (via Micrometer Tracing + the Logback pattern in `logback-spring.xml`), and are pushed straight to Loki even when the app runs locally from the IDE — no need to containerize it.
+
+### How application logs reach Loki
+
+The `loki-logback-appender` (Loki4j) ships every log line to `loki.url` (defaults to `http://localhost:3100/loki/api/v1/push`, exposed by the `loki` container) with labels `app=VisionService,host=<hostname>,level=<level>`.
+
+Infrastructure container logs (MongoDB, RabbitMQ, Qdrant, MinIO, etc.) are collected separately by **Promtail**, which tails Docker container stdout for every service labeled `logging=promtail`.
 
 ### Viewing application logs in Grafana
 
