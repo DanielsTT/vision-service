@@ -12,6 +12,8 @@ services:
       - MONGO_INITDB_DATABASE=visionservice
     volumes:
       - mongo_data:/data/db
+    networks:
+      - vision-network
 
   rabbitmq:
     image: rabbitmq:4.0-management
@@ -24,6 +26,8 @@ services:
       - RABBITMQ_DEFAULT_PASS=password
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - vision-network
 
   qdrant:
     image: qdrant/qdrant:v1.13.0
@@ -33,6 +37,8 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    networks:
+      - vision-network
 
   minio:
     image: minio/minio:latest
@@ -46,6 +52,8 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - vision-network
 
   ollama:
     image: ollama/ollama:latest
@@ -55,13 +63,6 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava-phi3 && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:13b && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run llava:34b && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run minicpm-v && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run moondream && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run bakllava && ollama pull nomic-embed-text && tail -f /dev/null" ]
-#    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run qwen2-vl && ollama pull nomic-embed-text && tail -f /dev/null" ]
     deploy:
       resources:
         reservations:
@@ -69,6 +70,8 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    networks:
+      - vision-network
 
   prometheus:
     image: prom/prometheus:latest
@@ -76,9 +79,14 @@ services:
     ports:
       - "9090:9090"
     volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - vision-network
 
   grafana:
     image: grafana/grafana:latest
@@ -86,17 +94,23 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
+    networks:
+      - vision-network
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: visionservice-jaeger
     ports:
-      - "16686:16686" # UI Jaegera
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - vision-network
 
 volumes:
   mongo_data:
@@ -106,3 +120,7 @@ volumes:
   ollama_data:
   prometheus_data:
   grafana_data:
+
+networks:
+  vision-network:
+    driver: bridge

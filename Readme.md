@@ -50,16 +50,52 @@ Wait until the logs confirm the model is ready before sending any requests to th
 ### Service Endpoints
 
 * **RabbitMQ Management UI**: http://localhost:15672
-    * Login: `admin`
-    * Password: `password`
+  * Login: `admin`
+  * Password: `password`
 
 * **MinIO Console**: http://localhost:9001
-    * Login: `admin`
-    * Password: `password`
+  * Login: `admin`
+  * Password: `password`
 
 * **Qdrant API**: http://localhost:6333
-    * Accessing this endpoint should return the system status in JSON format.
+  * Accessing this endpoint should return the system status in JSON format.
 
+* **Grafana**: http://localhost:3000
+  * Login: `admin`
+  * Password: `admin`
+  * Used for visualizing application metrics (collected via Prometheus) in the form of dashboards.
+
+* **Jaeger UI**: http://localhost:16686
+  * Used for distributed tracing – allows you to inspect individual requests as they flow through the application and its dependencies.
+
+---
+
+## Observability – Grafana Dashboard Setup
+
+The application exposes metrics that are scraped by Prometheus and visualized in Grafana. After starting the infrastructure with `docker compose up -d`, you can import a ready-made dashboard for monitoring Spring Boot 3.x applications:
+
+1. Open Grafana at http://localhost:3000 and log in using the credentials above.
+2. In the left-hand menu, go to **Dashboards**.
+3. Click the **New** button (top right) and select **Import**.
+4. In the **Import via grafana.com** field, enter the dashboard ID `19004` (Spring Boot 3.x Statistics) and click **Load**.
+5. On the next screen, select the **Prometheus** data source from the dropdown list.
+6. Click **Import** to finish.
+
+The dashboard will now display JVM, HTTP, and Spring Boot Actuator metrics for the application.
+
+### Additional Dashboard – Spring Boot Observability (ID `17175`)
+
+A second dashboard, **Spring Boot Observability** (`17175`), can also be imported the same way (**Dashboards → New → Import**, enter `17175`, click **Load**).
+
+ **Note**: This dashboard also expects a **Loki** data source (used for log panels). Since Loki is not part of this stack, you need to add a fake/placeholder Loki data source so the import doesn't fail:
+
+1. Go to **Connections → Data sources → Add data source**.
+2. Select **Loki**.
+3. Enter any URL (e.g. `http://localhost:3100`) – it doesn't need to actually work.
+4. Click **Save & test** (the connection test may fail, that's fine) and save the data source.
+5. Now import dashboard `17175` and, when prompted, assign the **Prometheus** data source for metric panels and the fake **Loki** data source for log panels.
+
+The log panels will remain empty, but all metric-based panels will display correctly.
 
 ---
 
